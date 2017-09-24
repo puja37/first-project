@@ -1,1 +1,86 @@
+scala>case class cust(cust_id:Int,store_id:Int,sale:Int)
+scala>case class cust(cust_id:Int,store_id:Int,sale:Int)
+scala> val inp1 = sc.textFile("file:///home/cloudera/Desktop/customer_data").map(_.split(",")).map(x => cust(x(0).toInt, x(1).toInt, x(2).toInt)).toDF()
+inp1: org.apache.spark.sql.DataFrame = [cust_id: int, store_id: int, sale: int]
+
+scala> inp1.show()
++-------+--------+----+
+|cust_id|store_id|sale|
++-------+--------+----+
+|      1|     111|1000|
+|      2|     222|2000|
+|      3|     456|5000|
+|      4|     568|7000|
++-------+--------+----+
+
+
+scala> inp1.printSchema()
+root
+ |-- cust_id: integer (nullable = false)
+ |-- store_id: integer (nullable = false)
+ |-- sale: integer (nullable = false)
+
+
+scala> val inp2 = sc.textFile("file:///home/cloudera/Desktop/store_data").map(_.split(",")).map(x => acnt(x(0).toInt, x(1).toInt, x(2).toInt)).toDF()
+inp2: org.apache.spark.sql.DataFrame = [ac_id: int, store_id: int, sales_id: int]
+
+scala> inp2.show()
++-----+--------+--------+
+|ac_id|store_id|sales_id|
++-----+--------+--------+
+|  111|       4|       5|
+|  222|       5|       6|
+|  666|       7|       8|
++-----+--------+--------+
+
+
+scala> inp2.printSchema()
+root
+ |-- ac_id: integer (nullable = false)
+ |-- store_id: integer (nullable = false)
+ |-- sales_id: integer (nullable = false)
+
+
+scala> val naiveinnerjoin = inp1.join(inp2,inp1("store_id") === inp2("store_id"),"inner")
+naiveinnerjoin: org.apache.spark.sql.DataFrame = [cust_id: int, store_id: int, sale: int, ac_id: int, store_id: int, sales_id: int]
+
+scala> naiveinnerjoin.show()
++-------+--------+----+-----+--------+--------+                                 
+|cust_id|store_id|sale|ac_id|store_id|sales_id|
++-------+--------+----+-----+--------+--------+
++-------+--------+----+-----+--------+--------+
+
+
+scala> val naiveinnerjoin = inp1.join(inp2, inp1("store_id") === inp2("store_id"), "inner")
+naiveinnerjoin: org.apache.spark.sql.DataFrame = [cust_id: int, store_id: int, sale: int, ac_id: int, store_id: int, sales_id: int]
+
+scala> naiveinnerjoin.collect()
+res13: Array[org.apache.spark.sql.Row] = Array()                                
+
+scala> naiveinnerjoin.show()
++-------+--------+----+-----+--------+--------+                                 
+|cust_id|store_id|sale|ac_id|store_id|sales_id|
++-------+--------+----+-----+--------+--------+
++-------+--------+----+-----+--------+--------+
+
+
+scala> val joineddf = inp1.as('a).join(inp2.as('b), $"a.store_id" === $"b.store_id")
+joineddf: org.apache.spark.sql.DataFrame = [cust_id: int, store_id: int, sale: int, ac_id: int, store_id: int, sales_id: int]
+
+scala> joineddf.show()
++-------+--------+----+-----+--------+--------+                                 
+|cust_id|store_id|sale|ac_id|store_id|sales_id|
++-------+--------+----+-----+--------+--------+
++-------+--------+----+-----+--------+--------+
+
+
+scala> val creat_tab = naiveinnerjoin.registerTempTable("table1")
+creat_tab: Unit = ()
+
+scala> val hd = sqlContext.sql("select * from table1").show()
++-------+--------+----+-----+--------+--------+                                 
+|cust_id|store_id|sale|ac_id|store_id|sales_id|
++-------+--------+----+-----+--------+--------+
++-------+--------+----+-----+--------+--------+
+
 
