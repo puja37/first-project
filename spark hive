@@ -1,1 +1,24 @@
-for spark hive
+Importing tables into hive and then doing joins on spark and exporting back into hive:                                                                                
+scala> val sq1 = sqlContext.sql("select id,age from default.puji")
+sq1: org.apache.spark.sql.DataFrame = [id: int, age: int]
+
+scala> val sq2 = sqlContext.sql("select eid,name from default.spark")
+sq2: org.apache.spark.sql.DataFrame = [eid: int, name: string]
+
+scala> val df1 = sq1.join(sq2, sq1("id") === sq2("eid"), "leftouter")
+df1: org.apache.spark.sql.DataFrame = [id: int, age: int, eid: int, name: string]
+
+scala> val df1 = sq1 .as ("a").join(sq2. as ("b"),$"a.id" === $"b.eid","leftouter")
+
+
+scala> df1.write.format("orc").saveAsTable("default.newspark")
+
+scala> import sqlContext.implicits._
+import sqlContext.implicits._
+
+scala> val sql = new org.apache.spark.sql.hive.HiveContext(sc)
+17/08/25 21:34:19 WARN metastore.ObjectStore: Failed to get database default, returning NoSuchObjectException
+sql: org.apache.spark.sql.hive.HiveContext = org.apache.spark.sql.hive.HiveContext@4c8b65dd
+
+
+
