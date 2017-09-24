@@ -1,46 +1,65 @@
-Python Script:
-python scriptmin_usage_prep.py
-import sys, os, traceback, datetime
-from pyspark import SparkContext, SparkConf
-from pyspark.sql import HiveContext
-from pyspark.sql.types import *
-from pyspark.sql import *
-from pyspark.sql.functions import *
+If we load something that will be an rdd.
+If we load a table that is called as data frame because table has already structured data and then we can use it.
 
-class SumProcess:
-  def __init__(self):
-  conf = SparkConf()
-  conf.setAppName('min usage')
-  self.sc = SparkContext(conf=conf)
-  self.hiveContext = HiveContext(self.sc)
-  pass
+Map : for each element it produces one value as output (one to one relationship)
+Like :array(“puji”,”puijtha”) 
+Output. Will be array(“puji”),array(“pujitha”)
 
-  def run(self):
-  p_stmt='select createddate,visualid,guestid,orderid,orderitemid,parkname,productname,totalprice,ordersource,storename,paymentsource,city,country,countrycode,zipcode,state,cancelleddatetime from purchases.purchases'
-  mu_stmt='select * from galaxy.min_usage'
-  od_stmt='select visualid,orderlineid from galaxy_stg.orderdetails'
-  f_stmt='select idno,descr from galaxy.facility'
-  p_df=self.hiveContext.sql(p_stmt)
-  mu_df=self.hiveContext.sql(mu_stmt)
-  od_df=self.hiveContext.sql(od_stmt)
-  f_df=self.hiveContext.sql(f_stmt)
-  mu_go_df=od_df.join(p_df,od_df.orderlineid == p_df.orderitemid,'inner').join(mu_df,mu_df.visualid == od_df.visualid,'inner').join(f_df,f_df.idno == mu_df.facilityid,'inner').drop(od_df.visualid).drop(od_df.orderlineid).drop(f_df.idno).drop(p_df.visualid)
-  mu_gf_df=p_df.join(mu_df,mu_df.visualid == p_df.visualid,'inner').join(f_df,f_df.idno == mu_df.facilityid,'inner').drop(f_df.idno).drop(p_df.visualid)
-  final_mu=mu_go_df.unionAll(mu_gf_df).repartition(100)
-  #.filter(od_df.visualid !="")
-  #final_df=mu_go_df.select(mu_go_df.visualid.alias('minusage_visualid'),p_df.parkname)
-  #.filter(od_df.visualid!='')
-  #self.hiveContext.sql('drop table if exists galaxy_tmp.comb_purchases purge')
-  #self.hiveContext.sql('drop table if exists galaxy_tmp.py_minusage purge')
-  #mu_go_df.write.mode("overwrite").format("orc").saveAsTable("galaxy_tmp.py_test_mu")
-  #mu_gf_df.write.format("orc").saveAsTable("galaxy_tmp.py_test_mu_gf")
-  final_mu.write.mode("overwrite").format("orc").saveAsTable("galaxy_tmp.py_test_mu_gf_f")
-  #mu_df.write.mode("overwrite").format("orc").saveAsTable("galaxy_tmp.py_minusage")
-  def stop(self):
-  self.sc.stop()
-  pass
-spark-submit:-
-shell script to trigger above .py file
-run_min_usage.sh
-spark-submit --master yarn --num-executors 4 --executor-memory 8g --executor-cores 5 --queue batch --driver-memory 8g --conf "spk.dynamicAllocation.enabled=false" --files /home/use.ucdp.net/206508333/ke.conf#ke.conf,/home/use.ucdp.net/206508333/kt.keytab#kt.keytab,/etc/hbase/conf/hbase-site.xml --jars /usr/hdp/current/hive-client/lib/hive-hbase-handler.jar,/usr/hdp/current/spark/lib/spark-examples-1.6.2.current-hadoop2.7.3.current.jar,/usr/hdp/current/phoenix-client/phoenix-client.jar,/usr/hdp/current/phoenix-client/lib/phoenix-spark-4.7.0.current.jar --packages com.hortonworks:shc:1.0.0-1.6-s_2.10 --repositories http://repo.hortonworks.com/content/groups/public/ /home/use.ucdp.net/206508333/min_usage_tableau/pyspark/min_usage_prep.py
+Flatmap:so like this it will give array of many elements (one to many relationship)
+array(“iam pujitha”)
+O/p: will be array of many elements Array(“iam”,”pujihta")
 
+repartition:-
+scala> val s=sc.parallelize(Array(1,2,3,4,5),2)
+s: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[29] at parallelize at <console>:27
+scala> s.collect()
+res35: Array[Int] = Array(1, 2, 3, 4, 5)
+scala> s.partitions.size
+res36: Int = 2
+
+initially we have created an rdd with 2 partitions
+
+scala> val scl2=s.repartition(6)
+scl2: org.apache.spark.rdd.RDD[Int] = MapPartitionsRDD[33] at repartition at <console>:29
+
+scala> scl2.partitions.size
+res37: Int = 6
+
+we can increase and decrease the partitions with repartition 
+it will have all the data movement
+
+
+coalesce :-
+------------------------
+
+val s=sc.parallelize(Array(1,2,3,4,5),2)
+s.collect()
+res26: Array[Int] = Array(1, 2, 3, 4, 5)
+scala> s.partitions.size
+res27: Int = 2
+so the s rdd is in 2 partitions now
+
+
+coalesce on s rdd:-
+
+scala> val scl2=s.coalesce(1)
+scl2: org.apache.spark.rdd.RDD[Int] = CoalescedRDD[23] at coalesce at <console>:29
+scala> scl2.partitions.size
+res28: Int = 1
+
+we have decreased the amount of partitions now to 1
+use of coalesce is there is less number of data movement associated with repartition
+as data movement is the costliest operation in spark
+
+coalesce to increse number of partitions:-
+scala> val scl2=s.coalesce(3)
+scl2: org.apache.spark.rdd.RDD[Int] = CoalescedRDD[23] at coalesce at <console>:29
+scala> scl2.partitions.size
+res28: Int = 2
+
+so when you try to increase the number of partitions using coalesce we will not increase the number of partitions
+
+lets take the above example so we have initialized s rdd with 2 partitions 
+then we coalesce the rdd to 1 it decreased the partitions to 1
+then we tried to increase the partitions to 3 but it wont supported to increase partitions more than 2 
+still it is showing 2 partitions.
