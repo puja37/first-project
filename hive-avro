@@ -1,1 +1,44 @@
+Creating table in mysql:
+mysql> create table emp(id int,age int,salary int);
+Query OK, 0 rows affected (0.06 sec)
 
+mysql> insert into table emp values(1,25,300)
+    -> ;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'table emp values(1,25,300)' at line 1
+mysql> insert into emp values(1,25,300)
+    -> ;
+Query OK, 1 row affected (0.02 sec)
+
+mysql> insert into emp values(2,23,500)
+    -> ;
+Query OK, 1 row affected (0.01 sec)
+
+mysql> insert into emp values(3,22,600);
+Query OK, 1 row affected (0.03 sec)
+
+mysql> select * from emp;
++------+------+--------+
+| id   | age  | salary |
++------+------+--------+
+|    1 |   25 |    300 |
+|    2 |   23 |    500 |
+|    3 |   22 |    600 |
++------+------+--------+
+3 rows in set (0.02 sec)
+Loading data from mysql -> hdfs using sqoop:
+>>sqoop import --connect jdbc:mysql://localhost:3306/puji --username root --password cloudera --table emp -m 1 --target-dir /sqoopavro --as-avrodatafile
+Hive table on top of Avro :
+hive> CREATE EXTERNAL TABLE as_avro 
+    > ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe' 
+    > STORED as INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat' 
+    > OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat' 
+    > LOCATION '/sqoopavro' 
+    > TBLPROPERTIES ('avro.schema.url'='file:///home/cloudera/emp.avsc');
+OK
+Time taken: 1.224 seconds
+hive> select * from as_avro;
+OK
+1    25    300
+2    23    500
+3    22    600
+Time taken: 1.971 seconds, Fetched: 3 row(s)
