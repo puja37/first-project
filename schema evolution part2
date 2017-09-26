@@ -1,1 +1,90 @@
+[cloudera@quickstart ~]$ hadoop fs -copyToLocal /sqoopavro/part-m-00000.avro
+[
+[cloudera@quickstart ~]$ avro-tools 
+Version 1.7.6-cdh5.10.0 of Apache Avro
+Copyright 2010 The Apache Software Foundation
+
+
+Available tools:
+          cat  extracts samples from files
+      compile  Generates Java code for the given schema.
+       concat  Concatenates avro files without re-compressing.
+   fragtojson  Renders a binary-encoded Avro datum as JSON.
+     fromjson  Reads JSON records and writes an Avro data file.
+     fromtext  Imports a text file into an avro data file.
+      getmeta  Prints out the metadata of an Avro data file.
+    getschema  Prints out schema of an Avro data file.
+          idl  Generates a JSON schema from an Avro IDL file
+ idl2schemata  Extract JSON schemata of the types from an Avro IDL file
+       induce  Induce schema/protocol from Java class/interface via reflection.
+   jsontofrag  Renders a JSON-encoded Avro datum as binary.
+       random  Creates a file with randomly generated instances of a schema.
+      recodec  Alters the codec of a data file.
+       repair  Recovers data from a corrupt Avro Data file
+  rpcprotocol  Output the protocol of a RPC service
+   rpcreceive  Opens an RPC Server and listens for one message.
+      rpcsend  Sends a single RPC message.
+       tether  Run a tethered mapreduce job.
+       tojson  Dumps an Avro data file as JSON, record per line or pretty.
+       totext  Converts an Avro data file to a text file.
+     totrevni  Converts an Avro data file to a Trevni file.
+  trevni_meta  Dumps a Trevni file's metadata as JSON.
+trevni_random  Create a Trevni file filled with random instances of a schema.
+trevni_tojson  Dumps a Trevni file as JSON.
+
+[cloudera@quickstart ~]$ avro-tools getschema part-m-00000.avro
+log4j:WARN No appenders could be found for logger (org.apache.hadoop.metrics2.lib.MutableMetricsFactory).
+log4j:WARN Please initialize the log4j system properly.
+log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+{
+  "type" : "record",
+  "name" : "emp",
+  "doc" : "Sqoop import of emp",
+  "fields" : [ {
+    "name" : "id",
+    "type" : [ "null", "int" ],
+    "default" : null,
+    "columnName" : "id",
+    "sqlType" : "4"
+  }, {
+    "name" : "age",
+    "type" : [ "null", "int" ],
+    "default" : null,
+    "columnName" : "age",
+    "sqlType" : "4"
+  }, {
+    "name" : "salary",
+    "type" : [ "null", "int" ],
+    "default" : null,
+    "columnName" : "salary",
+    "sqlType" : "4"
+  }, {
+    "name" : "bonus",
+    "type" : [ "null", "int" ],
+    "default" : null,
+    "columnName" : "bonus",
+    "sqlType" : "4"
+  } ],
+  "tableName" : "emp"
+}
+Scoop import
+Copy .avro file to local
+Then use Avro -tools to get schema from .avro file
+And save that .avsc file to Hadoop path
+Then delete .avro file in local because it will fill all the disk space
+Then create hive table on top of new .avsc file
+So hive table will have the new schema as the schema changed also.
+>>avro-tools getschema part-m-00000.avro >myavro.avsc
+Copying to myavro.avsc new file.
+>>hadoop fs -copyFromLocal myavro.avsc /
+>>
+CREATE EXTERNAL TABLE as_newavroschema 
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe' 
+STORED as INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat' 
+OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat' 
+LOCATION '/sqoopavro' 
+TBLPROPERTIES ('avro.schema.url'='/myavro.avsc’);
+-----------------------------------------------------------------------------------------------------------------------------
+
+
 

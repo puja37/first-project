@@ -1,1 +1,47 @@
 
+Add extra column to a a .avsc file and then:
+[cloudera@quickstart ~]$ cat emp_b.avsc;
+{
+  "type" : "record",
+  "name" : "emp",
+  "doc" : "Sqoop import of emp",
+  "fields" : [ {
+    "name" : "id",
+    "type" : [ "null", "int" ],
+    "default" : null,
+    "columnName" : "id",
+    "sqlType" : "4"
+  }, {
+    "name" : "age",
+    "type" : [ "null", "int" ],
+    "default" : null,
+    "columnName" : "age",
+    "sqlType" : "4"
+  }, {
+    "name" : "salary",
+    "type" : [ "null", "int" ],
+    "default" : null,
+    "columnName" : "salary",
+    "sqlType" : "4"
+  } ],
+  "tableName" : "emp"
+}
+hive> CREATE EXTERNAL TABLE as_avroschema 
+    > ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe' 
+    > STORED as INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat' 
+    > OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat' 
+    > LOCATION '/sqoopavro' 
+    > TBLPROPERTIES ('avro.schema.url'='file:///home/cloudera/emp_b.avsc');
+OK
+Time taken: 0.08 seconds
+hive> select * from as_avroschema;
+OK
+1    25    300
+2    23    500
+3    22    600
+1    26    500
+1    26    500
+Time taken: 0.095 seconds, Fetched: 5 row(s)
+##changing schema in emp_b.avsc  and then creating table on top of this hive.only changing .avsc file and no the .avro file in this.
+Copying .avro file from hdfs to local system:
+
