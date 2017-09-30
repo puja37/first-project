@@ -1,1 +1,92 @@
+[cloudera@quickstart ~]$ hadoop fs -ls /forhive/
+Found 1 items
+-rw-r--r--   1 cloudera supergroup      60377 2017-09-28 18:51 /forhive/my_file.csv
+[cloudera@quickstart ~]$ 
+
+hive> create external table forcsvdata(id int,first_name string,last_name string,email string,gender string,lastupdate string)row format delimited fields terminated by ',' location '/forhive';
+OK
+Time taken: 0.383 seconds
+hive> select * from forcsvdata limit 10;
+OK
+NULL    first_name    last_name    email    gender    lastupdate
+1    Zebadiah    Huffey    zhuffey0@nih.gov    Male    11:27:53.000
+2    Sheppard    Maidlow    smaidlow1@nymag.com    Male    21:50:31.000
+3    Burgess    Bousfield    bbousfield2@sun.com    Male    2:40:36.000
+4    Corry    Dackombe    cdackombe3@wufoo.com    Female    11:29:51.000
+5    Niall    Cahalan    ncahalan4@harvard.edu    Male    19:20:22.000
+6    Pedro    Wyss    pwyss5@reddit.com    Male    23:01:49.000
+7    Hollyanne    Whickman    hwhickman6@usa.gov    Female    8:57:52.000
+8    Jodie    Chatainier    jchatainier7@archive.org    Male    19:56:33.000
+9    Ezekiel    Broader    ebroader8@alexa.com    Male    15:54:58.000
+Time taken: 1.207 seconds, Fetched: 10 row(s)
+
+
+hive> select lastupdate,count(*) from forcsvdata where lastupdate > '10:30:31.000' group by lastupdate limit 10;
+10:30:48.000    1
+10:31:41.000    1
+10:32:10.000    1
+10:32:12.000    1
+10:32:29.000    1
+10:33:01.000    1
+10:33:10.000    1
+10:33:50.000    1
+10:33:55.000    1
+10:34:29.000    1
+Time taken: 49.016 seconds, Fetched: 10 row(s)
+
+To count  how many records are there on 11 time:
+11    46
+Time taken: 45.899 seconds, Fetched: 1 row(s)
+hive> select substr(lastupdate,0,2),count(*) from forcsvdata where substr(lastupdate,0,2) = 11 group by substr(lastupdate,0,2) limit 10;
+hive> select count(*) from forcsvdata where lastupdate > '11:00:00.000' and lastupdate  < '12:00:00.000'  limit 10;
+11 46
+Counting both 11 & 12 time:
+11    46
+12    38
+Time taken: 44.463 seconds, Fetched: 2 row(s)
+hive> select substr(lastupdate,0,2),count(*) from forcsvdata where substr(lastupdate,0,2) = 11 or substr(lastupdate,0,2) = 12 group by substr(lastupdate,0,2) limit 10;
+WildOperators in HQL:
+
+hive> select first_name from forcsvdata where first_name like 'Z%' limit 10;
+OK 
+Zebadiah
+Zorah
+Zoe
+Zoe
+Zora
+Zaccaria
+Zelda
+Zaria
+Zollie
+Zaria
+Time taken: 0.083 seconds, Fetched: 10 row(s)
+—>% includes one or many characters.
+hive> select first_name from forcsvdata where first_name like 'Z%h' limit 10;
+OK
+Zebadiah
+Zorah
+Zebadiah
+Time taken: 0.086 seconds, Fetched: 3 row(s)
+— _represents only one character
+hive> select first_name from forcsvdata where first_name like 'Z_h' limit 10;
+OK
+Time taken: 0.115 seconds
+hive> select first_name from forcsvdata where first_name like 'Z___h' limit 10;
+OK
+Zorah
+Time taken: 0.119 seconds, Fetched: 1 row(s)
+Case statement :
+In this case statement we can use for abbreviations and because if there is abbreviations because we have to pay lot of money to databases like oracle to store the data so instead use this ‘usf’ and then in our local system as it .
+hive> select gender,CASE WHEN gender = 'Male' THEN 'yes' ELSE 'not sure' ENd from forcsvdata limit 5;
+OK
+gender    not sure
+Male    yes
+Male    yes
+Male    yes
+Female    not sure
+Time taken: 0.15 seconds, Fetched: 5 row(s)
+
+
+
+
 
